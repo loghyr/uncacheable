@@ -162,14 +162,15 @@
 
 <section anchor='ssec_uncacheable_attr' numbered='true' removeInRFC='false' toc='default'>
   <name>XDR for Offline Attribute</name>
-  <sourcecode name='' type='' markers='true'><![CDATA[
+  <figure anchor='code_uncacheable'>
+    <sourcecode type='xdr'>
 ///
 /// typedef bool            fattr4_uncacheable;
 ///
 /// const FATTR4_UNCACHEABLE            = 87;
 ///
-]]>
-  </sourcecode>
+    </sourcecode>
+  </figure>
 </section>
 
 <section anchor='xdr_desc' numbered='true' removeInRFC='false' toc='default'>
