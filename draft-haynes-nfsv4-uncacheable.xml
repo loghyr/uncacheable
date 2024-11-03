@@ -41,7 +41,7 @@
       to refresh information. But this defeats the server checking
       to see if the user has permission to view
       the dirent's attributes. Caching the data can cause performance
-      impacts if the page cache hit rate is low..
+      impacts if the page cache hit rate is low.
       This document introduces a new file attribute called
       uncacheable which indicates that the client <bcp14>MUST NOT</bcp14>
       cache the metadata or data for that dirent.  This document extends NFSv4.2
