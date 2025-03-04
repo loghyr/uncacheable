@@ -34,21 +34,18 @@
   <keyword>NFSv4</keyword>
   <abstract>
     <t>
-      The Network File System v4.2 (NFSv4.2) allows a client to cache
-      both the metadata and the data for a file object. It can also
-      cache the metadata for a directory object. Caching the dirents
-      (i.e., the metadata) allows the client to avoid querying the
-      server to refresh information. But this defeats the server
-      checking to see if the user has permission to view the dirent's
-      attributes. Caching the data can cause performance impacts if the
-      page cache hit rate is low.  This document introduces a feature for
-      NFSv4 that defines uncacheable file objects. Files and directory
-      entries (dirents) marked as uncacheable <bcp14>MUST NOT<bcp14> be
-      stored in client-side caches. This feature <bcp14>SHOULD</bcp14> be
-      implemented by NFSv4 servers and clients to ensure data consistency
-      and integrity by forcing clients to always fetch the most recent
-      data directly from the server.  This document extends NFSv4.2
-      (see RFC7863).
+      The Network File System version 4.2 (NFSv4.2) allows a client
+      to cache both metadata and data for file objects, as well as
+      metadata for directory objects.  While caching directory entries
+      (dirents) can improve performance, it can also prevent the server
+      from enforcing access control on individual dirents.  Similarly,
+      caching file data can lead to performance issues if the cache hit
+      rate is low.  This document introduces a new uncacheable attribute
+      for NFSv4.  Files and dirents marked as uncacheable <bcp14>MUST NOT</bcp14> be
+      stored in client-side caches.  This ensures data consistency and
+      integrity by requiring clients to always retrieve the most recent
+      data directly from the server. This document extends NFSv4.2
+      (see RFC7862).
     </t>
   </abstract>
 
@@ -80,25 +77,25 @@
   </t>
 
   <t>
-    As these cached dirents are shared by all users on the clients and
-    the client can not determine access to these dirents, all users
-    are presented with the same set of attributes. We introduce the
-    new uncacheable attribute, which informs the client not to cache
-    a dirent for that file or directory object. As such each time the client
-    queries for those attributes, the response can be
-    tailored to that user. That decision can be based on either
-    Access Control List (ACL) on a file or directory object (see Section 6
-    of <xref target='RFC8881' format='default' sectionFormat='of'/>)
-    or proprietary policies.
+    Since cached dirents are shared by all users on a client, and the
+    client cannot determine access permissions for individual dirents,
+    all users are presented with the same set of attributes. To address
+    this, this document introduces the new uncacheable attribute. This attribute
+    instructs the client not to cache the dirent for a file or directory
+    object. Consequently, each time a client queries for these attributes,
+    the server's response can be tailored to the specific user making
+    the request, based on factors such as Access Control Lists (ACLs) on
+    the file or directory object (see Section 6 of <xref target='RFC8881'
+    format='default' sectionFormat='of'/>) or proprietary policies.
   </t>
 
   <t>
-    Besides the caching of metadata for both files and directories, the
-    client can also cache data for files. The uncacheable attribute also
-    informs the client to avoid its page cache. It is very similar
-    to passing the O_DIRECT to the open call. This can be useful
-    for files that are not shared and also for ones which do not
-    meet the expectations of the caching patterns of the page cache.
+    In addition to caching metadata, clients can also cache file data. The
+    uncacheable attribute also instructs the client to bypass its page
+    cache for the file. This behavior is similar to using the O_DIRECT
+    flag with the open call. This can be beneficial for files that are
+    not shared or for files that do not exhibit access patterns suitable
+    for caching.
   </t>
 
   <t>
@@ -116,14 +113,15 @@
     <dl newline='false' spacing='normal'>
       <dt>Access Based Enumeration:</dt>
       <dd>
-        When servicing either a READDIR or a GETATTR, base the
-        result on the access permitted to the user making the request.
+        When servicing a READDIR or GETATTR operation, the server
+        provides results based on the access permissions of the user
+        making the request.
       </dd>
       <dt>dirent:</dt>
       <dd>
-        A directory entry,  which can either represent a file or a
-        subdirectory. In the context of NFSv4, a dirent that is marked
-        as uncacheable <bcp14>MUST NOT</bcp14> be cached by clients.
+        A directory entry, representing either a file or a
+        subdirectory. In the context of NFSv4, a dirent marked as
+        uncacheable <bcp14>MUST NOT</bcp14> be cached by clients.
       </dd>
     </dl>
   </section>
@@ -147,21 +145,21 @@
 <section anchor='sec_dirents' numbered='true' removeInRFC='false' toc='default'>
   <name>Uncacheable Dirents</name>
   <t>
-    If a file object or directory has the uncacheable attribute set, then the client
-    <bcp14>MUST NOT</bcp14> cache their dirent attributes. I.e., just
-    because it presented the attributes to user A on
-    the first request, then on a subsequent request, it <bcp14>MUST</bcp14>
-    query for those attributes again. Also, the client <bcp14>MUST NOT</bcp14>
-    share attributes between different users.
+    If a file object or directory has the uncacheable attribute set,
+    then the client <bcp14>MUST NOT</bcp14> cache its dirent attributes. This means
+    that even if the client has previously retrieved the attributes
+    for a user, it <bcp14>MUST</bcp14> query the server again for those attributes
+    on subsequent requests. Additionally, the client <bcp14>MUST NOT</bcp14> share
+    attributes between different users.
   </t>
 </section>
 
 <section anchor='sec_files' numbered='true' removeInRFC='false' toc='default'>
   <name>Uncacheable Files</name>
   <t>
-    If a file object is marked as uncacheable, that also means all modifications
-    to the file <bcp14>MUST</bcp14> immediately be sent from the client
-    to the server. I.e., the data is also not cacheable.
+    If a file object is marked as uncacheable, all modifications to
+    the file <bcp14>MUST</bcp14> be immediately sent from the client to the server. In
+    other words, the file data is also not cacheable.
   </t>
 </section>
 
@@ -184,11 +182,9 @@
     This document contains the external data representation (XDR)
     <xref target='RFC4506' format='default' sectionFormat='of'/> description of the uncacheable
     attribute.
-    The XDR description is embedded in this
-    document in a way that makes it simple for the reader to extract
-    into a ready-to-compile form.  The reader can feed this document
-    into the following shell script to produce the machine readable
-    XDR description of the new flags:
+    The XDR description is presented in a manner that facilitates
+    easy extraction into a ready-to-compile format. To extract the
+    machine-readable XDR description, use the following shell script:
   </t>
   <sourcecode name='' type='' markers='true'><![CDATA[
 #!/bin/sh
@@ -196,17 +192,16 @@ grep '^ *///' $* | sed 's?^ */// ??' | sed 's?^ *///$??'
     ]]>
   </sourcecode>
   <t>
-    That is, if the above script is stored in a file called 'extract.sh', and
-    this document is in a file called 'spec.txt', then the reader can do:
+    For example, if the script is named 'extract.sh' and this document is named 'spec.txt', execute the following command:
   </t>
   <sourcecode name='' type='' markers='true'><![CDATA[
 sh extract.sh < spec.txt > uncacheable_prot.x
     ]]>
   </sourcecode>
   <t>
-    The effect of the script is to remove leading white space from each
-    line, plus a sentinel sequence of '///'.  XDR descriptions with the
-    sentinel sequence are embedded throughout the document.
+    This script removes leading whitespace and the sentinel sequence
+    '///' from each line. XDR descriptions with the sentinel sequence are
+    embedded throughout the document.
   </t>
   <t>
     Note that the XDR code contained in this document depends on types
@@ -217,20 +212,19 @@ sh extract.sh < spec.txt > uncacheable_prot.x
     uint64_t.
   </t>
   <t>
-    While the XDR can be appended to that from
-    <xref target='RFC7863' format='default' sectionFormat='of'/>,
-    the various code snippets belong in their respective areas of
-    that XDR.
+    While the XDR can be appended to that from <xref target='RFC7863'
+    format='default' sectionFormat='of'/>, the code snippets should be
+    placed in their appropriate sections within the existing XDR.
   </t>
 </section>
 
 <section anchor='sec_security' numbered='true' removeInRFC='false' toc='default'>
   <name>Security Considerations</name>
   <t>
-    Clients <bcp14>MUST NOT</bcp14> make access decisions to uncacheable dirents,
-    these decisions <bcp14>MUST</bcp14> be made by the server. With the
-    uncacheable attribute, dirents can be annotated such that attributes
-    can be presented to the user based on the server's decision.
+    Clients <bcp14>MUST NOT</bcp14> make access decisions for uncacheable
+    dirents. These decisions MUST be made by the server. The uncacheable
+    attribute allows dirents to be annotated such that attributes are
+    presented to the user based on the server's access control decisions.
   </t>
 </section>
 
